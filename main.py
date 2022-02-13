@@ -8,6 +8,8 @@ import sys
 from typing import Union
 from queue import Empty
 
+__version__ = "0.0.1"
+
 
 class Parallelizer:
     def __init__(self):
