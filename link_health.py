@@ -165,9 +165,13 @@ def main():
 
     responses = list(parallelizer.map(links, check_link))
     print("")
-    failed_responses = list(filter(
-        lambda response: isinstance(response, Exception), responses
-    ))
+
+    def is_failed_response(response):
+        return (
+            isinstance(response, Exception) or
+            isinstance(response, requests.Response) and response.status_code > 400
+        )
+    failed_responses = list(filter(is_failed_response, responses))
     for failed_response in failed_responses:
         print(f"Failed link: {failed_response}")
     print(
