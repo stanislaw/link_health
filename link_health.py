@@ -2,13 +2,13 @@ import argparse
 import multiprocessing
 import os
 import re
-import requests
 import sys
-
-from typing import Union
 from queue import Empty
+from typing import Union
 
-__version__ = "0.0.1"
+import requests
+
+__version__ = "0.0.2"
 
 
 class Parallelizer:
@@ -147,6 +147,13 @@ def check_link(link) -> Union[requests.Response, Exception]:
     return get_response
 
 
+def find_links(input_content):
+    return re.findall(
+        rf"(?P<url>https?://[^\s><]+[^\.\s><])",
+        input_content
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description='Description of your program')
     parser.add_argument("input_path")
@@ -159,7 +166,7 @@ def main():
     with open(input_path, "r") as input_file:
         input_content = input_file.read()
 
-    links = re.findall(r"(?P<url>https?://[^\s><]+)", input_content)
+    links = find_links(input_content)
 
     parallelizer = Parallelizer()
 
