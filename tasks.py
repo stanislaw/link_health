@@ -146,7 +146,7 @@ def install_local(context):
 
 
 @task
-def lint_black_diff(context):
+def lint_black(context):
     command = one_line_command(
         """
         black . --color 2>&1
@@ -207,7 +207,7 @@ def lint_mypy(context):
 
 
 @task(
-    lint_black_diff,
+    lint_black,
     lint_pylint,
     lint_flake8,
     lint_mypy,
