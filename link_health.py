@@ -3,13 +3,14 @@ import multiprocessing
 import os
 import re
 import sys
+import yaml
 from enum import Enum
 from queue import Empty
 from typing import Union, List
 
 import requests
 
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
 
 class Parallelizer:
@@ -116,6 +117,7 @@ class ResponseData:
         self.link: str = link
         self.status: Status = status
         self.payload: Union[None, int, str] = payload
+        self.expected = False
 
     @staticmethod
     def create_from_response(link: str, response: requests.Response) -> "ResponseData":
@@ -164,6 +166,9 @@ class ResponseData:
         payload_string = str(self.payload) if self.payload is not None else ""
         return " ".join([str(self.status), payload_string, self.link])
 
+    def promote_to_expected(self):
+        self.expected = True
+
 
 def head_request(link) -> ResponseData:
     try:
@@ -190,11 +195,23 @@ def get_request(*, link, verify: bool) -> ResponseData:
         return ResponseData.create_from_exception(link, exception)
 
 
-def check_link(link) -> ResponseData:
+def check_link(link_and_exceptions) -> ResponseData:
+    link = link_and_exceptions[0]
+    exceptions = link_and_exceptions[1]
+
     head_response = head_request(link)
     print(".", end="")
     if head_response.is_success():
         return head_response
+
+    if link in exceptions:
+        code = exceptions[link]
+        if head_response.payload == code:
+            print(
+                f"\nHEAD {link} -> Known exception: [{head_response.get_error_message()}]"
+            )
+            head_response.promote_to_expected()
+            return head_response
 
     print(f"\nHEAD {link} [{head_response.get_error_message()}]")
 
@@ -231,17 +248,42 @@ def main():
     with open(input_path, "r") as input_file:
         input_content = input_file.read()
 
+    exceptions = {}
+
+    config_file_name = ".link_health.yml"
+    if os.path.isfile(config_file_name):
+        with open(config_file_name, "r") as stream:
+            try:
+                config_dict = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+                sys.exit(1)
+        if "exceptions" in config_dict:
+            exceptions_dict = config_dict["exceptions"]
+            for exception_dict in exceptions_dict:
+                assert "url" in exception_dict
+                assert "code" in exception_dict
+                exceptions[exception_dict["url"]] = exception_dict["code"]
+
     links = find_links(input_content)
 
     parallelizer = Parallelizer()
 
-    responses = list(parallelizer.map(links, check_link))
-    print("")
+    link_list = map(lambda el: (el, exceptions), links)
+    responses = list(parallelizer.map(link_list, check_link))
 
-    def is_failed_response(response: ResponseData):
-        return not response.is_success()
+    expected_failed_responses: List[ResponseData] = list(
+        filter(lambda r: not r.is_success() and r.expected, responses)
+    )
+    failed_responses: List[ResponseData] = list(
+        filter(lambda r: not r.is_success() and not r.expected, responses)
+    )
 
-    failed_responses: List[ResponseData] = list(filter(is_failed_response, responses))
+    print("\n")
+    for expected_failed_response in expected_failed_responses:
+        print(
+            f"Expectedly failed link: {expected_failed_response.get_error_message_with_link()}"
+        )
     for failed_response in failed_responses:
         print(f"Failed link: {failed_response.get_error_message_with_link()}")
     print(
