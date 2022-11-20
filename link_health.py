@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+"""
+Link Health checker
+
+Known issues:
+
+1) Some websites respond with HTTP 403 but work fine if a link is opened in a
+browser manually. There must be advanced request validity checkers doing the job
+of rejecting requests sent by bots
+(more advanced request header checks and JS tricks).
+
+The only solution would be to upgrade the Link Health script to use
+Selenium which does a much better job of emulating a real browser. However, for
+simple checking of README pages having few 403 links is fine for our purposes.
+This is why the Link Health still uses basic `requests` API.
+
+Examples:
+
+- https://www.fastcompany.com/28121/they-write-right-stuff
+"""
+
 import argparse
 import multiprocessing
 import os
