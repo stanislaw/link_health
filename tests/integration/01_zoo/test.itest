@@ -1,0 +1,3 @@
+RUN: %link_health %S/README.md
+
+CHECK: Expectedly failed link: CONNECTION_ERROR ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')) https://www.bugseng.com/blog/requirement-traceability-all-substance-and-no-fuss

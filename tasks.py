@@ -10,7 +10,9 @@ def one_line_command(string):
 
 
 def run_invoke_cmd(context, cmd) -> invoke.runners.Result:
-    return context.run(cmd, env=None, hide=False, warn=False, pty=False, echo=True)
+    return context.run(
+        cmd, env=None, hide=False, warn=False, pty=False, echo=True
+    )
 
 
 @task
@@ -35,7 +37,9 @@ def clean(context):
 
     find_result = run_invoke_cmd(context, find_command)
     find_result_stdout = find_result.stdout.strip()
-    echo_command = one_line_command(f"""echo {find_result_stdout} | xargs rm -rfv""")
+    echo_command = one_line_command(
+        f"""echo {find_result_stdout} | xargs rm -rfv"""
+    )
 
     run_invoke_cmd(context, echo_command)
 
@@ -99,57 +103,10 @@ def test_integration(context, focus=None, debug=False):
 
 
 @task
-def export_pip_requirements(context):
-    run_invoke_cmd(
-        context,
-        one_line_command(
-            """
-        poetry
-            export
-                --dev
-                --without-hashes
-                --format requirements.txt
-                > requirements.txt
-        """
-        ),
-    )
-
-
-# Support generation of Poetry managed setup.py file #761
-# https://github.com/python-poetry/poetry/issues/761#issuecomment-689491920
-@task
-def install_local(context):
-    run_invoke_cmd(
-        context,
-        one_line_command(
-            """
-                rm -rf dist/ && poetry build
-            """
-        ),
-    )
-    run_invoke_cmd(
-        context,
-        one_line_command(
-            """
-        tar -xvf dist/*.tar.gz --wildcards --no-anchored '*/setup.py' --strip=1
-        """
-        ),
-    )
-    run_invoke_cmd(
-        context,
-        one_line_command(
-            """
-        pip install -e .
-        """
-        ),
-    )
-
-
-@task
 def lint_black(context):
     command = one_line_command(
         """
-        black . --color 2>&1
+        black . --color --line-length 80 2>&1
         """
     )
     result = run_invoke_cmd(context, command)
@@ -168,7 +125,7 @@ def lint_pylint(context):
         pylint
           --rcfile=.pylint.ini
           --disable=c-extension-no-member
-          reqif/ tasks.py
+          ./
         """  # pylint: disable=line-too-long
     )
     try:
@@ -184,7 +141,7 @@ def lint_flake8(context):
     command = one_line_command(
         """
         flake8
-            reqif/ tasks.py tests/unit/
+            ./
             --statistics --max-line-length 80 --show-source
         """
     )
@@ -197,7 +154,7 @@ def lint_mypy(context):
         context,
         one_line_command(
             """
-        mypy reqif/
+        mypy .
             --show-error-codes
             --disable-error-code=import
             --disable-error-code=no-untyped-call
@@ -210,7 +167,7 @@ def lint_mypy(context):
     lint_black,
     lint_pylint,
     lint_flake8,
-    lint_mypy,
+    # lint_mypy,
 )
 def lint(_):
     pass

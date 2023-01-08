@@ -1,2 +1,16 @@
 pyyaml
 requests
+
+# Dev tasks
+invoke
+
+# Lint
+black
+pylint
+flake8
+mypy
+
+# Tests
+pytest
+coverage>=5.4
+lit
