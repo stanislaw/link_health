@@ -1,5 +1,10 @@
 .lit_test_times.txt
 **/output/**
 **/Output/**
-.link_health.yml
+/.link_health.yml
+.idea
+
+.coverage
+__pycache__/
+tests/unit/__pycache__/
 

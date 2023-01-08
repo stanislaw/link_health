@@ -122,15 +122,23 @@ CONNECT_TIMEOUT = 5
 READ_TIMEOUT = 5
 
 
-class Status(Enum):
-    SUCCESS = 0
-    SUCCESS_READ_TIMEOUT_EXPECTED = 1
-    HTTP_4xx = 2
-    HTTP_5xx = 3
-    CONNECTION_ERROR = 4
-    SSL_ERROR = 5
-    CONNECT_TIMEOUT = 6
-    READ_TIMEOUT = 7
+class Status(str, Enum):
+    SUCCESS = "SUCCESS"
+    SUCCESS_READ_TIMEOUT_EXPECTED = "SUCCESS_READ_TIMEOUT_EXPECTED"
+    HTTP_4xx = "HTTP_4xx"
+    HTTP_403 = "HTTP_403"
+    HTTP_5xx = "HTTP_5xx"
+    CONNECTION_ERROR = "CONNECTION_ERROR"
+    SSL_ERROR = "SSL_ERROR"
+    CONNECT_TIMEOUT = "CONNECT_TIMEOUT"
+    READ_TIMEOUT = "READ_TIMEOUT"
+
+    @staticmethod
+    def all():
+        return list(map(lambda c: c.value, Status))
+
+    def __str__(self):
+        return self.value
 
 
 class ResponseData:
@@ -140,14 +148,22 @@ class ResponseData:
         self.payload: Union[None, int, str] = payload
         self.expected = False
 
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __repr__(self):
+        return self.__str__()
+
     @staticmethod
     def create_from_response(link: str, response: requests.Response) -> "ResponseData":
         if 200 <= response.status_code <= 400:
-            return ResponseData(link, Status.SUCCESS, response.status_code)
+            return ResponseData(link, Status.SUCCESS, None)
         if 400 <= response.status_code < 500:
-            return ResponseData(link, Status.HTTP_4xx, response.status_code)
+            if response.status_code == 403:
+                return ResponseData(link, Status.HTTP_403, None)
+            return ResponseData(link, Status.HTTP_4xx, None)
         if 500 <= response.status_code < 600:
-            return ResponseData(link, Status.HTTP_5xx, response.status_code)
+            return ResponseData(link, Status.HTTP_5xx, None)
         else:
             raise NotImplementedError(response)
 
@@ -227,7 +243,7 @@ def check_link(link_and_exceptions) -> ResponseData:
 
     if link in exceptions:
         code = exceptions[link]
-        if head_response.payload == code:
+        if head_response.status == code:
             print(
                 f"\nHEAD {link} -> Known exception: [{head_response.get_error_message()}]"
             )
@@ -254,7 +270,7 @@ def check_link(link_and_exceptions) -> ResponseData:
 
 
 def find_links(input_content):
-    return re.findall(rf"(?P<url>https?://[^\s><]+[^\.\s><])", input_content)
+    return re.findall(rf"(?P<url>https?://[^\s><]+[^.\s><])", input_content)
 
 
 def main():
@@ -281,10 +297,17 @@ def main():
                 sys.exit(1)
         if "exceptions" in config_dict:
             exceptions_dict = config_dict["exceptions"]
+            all_codes = Status.all()
             for exception_dict in exceptions_dict:
                 assert "url" in exception_dict
                 assert "code" in exception_dict
-                exceptions[exception_dict["url"]] = exception_dict["code"]
+                exception_code = exception_dict["code"]
+                if exception_code not in all_codes:
+                    raise Exception(
+                        f"Unknown expected error code: {exception_code}. "
+                        f"Valid codes: {all_codes}"
+                    )
+                exceptions[exception_dict["url"]] = exception_code
 
     links = find_links(input_content)
 

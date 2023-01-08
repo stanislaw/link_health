@@ -1,2 +1,7 @@
 pyyaml
 requests
+
+# Tests
+pytest
+coverage>=5.4
+lit
