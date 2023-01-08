@@ -17,6 +17,11 @@ This is why the Link Health still uses basic `requests` API.
 Examples:
 
 - https://www.fastcompany.com/28121/they-write-right-stuff
+
+2) Some websites open in a browser but don't give any answer when asked by
+this script. The result is:
+'Connection aborted.', RemoteDisconnected('Remote end closed connection without
+response').
 """
 
 import argparse
