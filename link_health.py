@@ -31,7 +31,7 @@ from typing import Union, List
 
 import requests
 
-__version__ = "0.0.5"
+__version__ = "0.0.6"
 
 
 class Parallelizer:
@@ -115,7 +115,8 @@ class NullParallelizer:
 
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
 }
 
 CONNECT_TIMEOUT = 5
@@ -137,12 +138,11 @@ class Status(str, Enum):
     def all():
         return list(map(lambda c: c.value, Status))
 
-    def __str__(self):
-        return self.value
-
 
 class ResponseData:
-    def __init__(self, link: str, status: Status, payload: Union[None, int, str]):
+    def __init__(
+        self, link: str, status: Status, payload: Union[None, int, str]
+    ):
         self.link: str = link
         self.status: Status = status
         self.payload: Union[None, int, str] = payload
@@ -155,7 +155,9 @@ class ResponseData:
         return self.__str__()
 
     @staticmethod
-    def create_from_response(link: str, response: requests.Response) -> "ResponseData":
+    def create_from_response(
+        link: str, response: requests.Response
+    ) -> "ResponseData":
         if 200 <= response.status_code <= 400:
             return ResponseData(link, Status.SUCCESS, None)
         if 400 <= response.status_code < 500:
@@ -168,7 +170,9 @@ class ResponseData:
             raise NotImplementedError(response)
 
     @staticmethod
-    def create_from_exception(link: str, exception: Exception) -> "ResponseData":
+    def create_from_exception(
+        link: str, exception: Exception
+    ) -> "ResponseData":
         if isinstance(exception, requests.exceptions.SSLError):
             return ResponseData(link, Status.SSL_ERROR, str(exception))
         if isinstance(exception, requests.exceptions.ReadTimeout):
@@ -184,7 +188,9 @@ class ResponseData:
         link: str, exception: Exception
     ) -> "ResponseData":
         assert isinstance(exception, requests.exceptions.ReadTimeout)
-        return ResponseData(link, Status.SUCCESS_READ_TIMEOUT_EXPECTED, str(exception))
+        return ResponseData(
+            link, Status.SUCCESS_READ_TIMEOUT_EXPECTED, str(exception)
+        )
 
     def is_success(self):
         return (
@@ -243,9 +249,10 @@ def check_link(link_and_exceptions) -> ResponseData:
 
     if link in exceptions:
         code = exceptions[link]
-        if head_response.status == code:
+        if head_response.status.value == code:
             print(
-                f"\nHEAD {link} -> Known exception: [{head_response.get_error_message()}]"
+                f"\nHEAD {link} -> Known exception: "
+                f"[{head_response.get_error_message()}]"
             )
             head_response.promote_to_expected()
             return head_response
@@ -258,7 +265,9 @@ def check_link(link_and_exceptions) -> ResponseData:
 
     if get_response.is_ssl_error():
         print(f"\nGET {link} [{get_response.get_error_message()}]", end="\n")
-        print(f"\nGET {link} – Trying again without SSL verification...", end="\n")
+        print(
+            f"\nGET {link} – Trying again without SSL verification...", end="\n"
+        )
 
         get_response = get_request(link=link, verify=False)
         if get_response.is_success():
@@ -270,7 +279,7 @@ def check_link(link_and_exceptions) -> ResponseData:
 
 
 def find_links(input_content):
-    return re.findall(rf"(?P<url>https?://[^\s><]+[^.\s><])", input_content)
+    return re.findall(r"(?P<url>https?://[^\s><]+[^.\s><])", input_content)
 
 
 def main():
@@ -326,7 +335,8 @@ def main():
     print("\n")
     for expected_failed_response in expected_failed_responses:
         print(
-            f"Expectedly failed link: {expected_failed_response.get_error_message_with_link()}"
+            f"Expectedly failed link: "
+            f"{expected_failed_response.get_error_message_with_link()}"
         )
     for failed_response in failed_responses:
         print(f"Failed link: {failed_response.get_error_message_with_link()}")
