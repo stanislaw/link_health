@@ -284,7 +284,21 @@ def check_link(link_and_exceptions) -> ResponseData:
 
 
 def find_links(input_content):
-    return re.findall(r"(?P<url>https?://[^\s><]+[^.\s><])", input_content)
+    # This regex is extremely simple, but it does the job for the links
+    # encountered and put under test so far.
+    PART_REGEX = r"[A-Za-z0-9_\-%+]+"
+    matches = re.findall(
+        (
+            rf"(?P<url>https?://({PART_REGEX}[\.\/])+{PART_REGEX}"
+            rf"(\?({PART_REGEX}={PART_REGEX}&)*{PART_REGEX}={PART_REGEX})?"
+            ")"
+        ),
+        input_content
+    )
+    links = []
+    for match in matches:
+        links.append(match[0])
+    return links
 
 
 def main():
