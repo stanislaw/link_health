@@ -36,7 +36,7 @@ from typing import Union, List
 
 import requests
 
-__version__ = "0.0.7"
+__version__ = "0.0.8"
 
 
 class Parallelizer:
@@ -294,7 +294,7 @@ def find_links(input_content):
     PART_REGEX = r"[A-Za-z0-9_\-%+]+"
     matches = re.findall(
         (
-            rf"(?P<url>https?://({PART_REGEX}[\.\/])+{PART_REGEX}"
+            rf"(?P<url>https?://({PART_REGEX}[\.\/])+{PART_REGEX}\/?"
             rf"(\?({PART_REGEX}={PART_REGEX}&)*{PART_REGEX}={PART_REGEX})?"
             ")"
         ),

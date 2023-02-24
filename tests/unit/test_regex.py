@@ -35,3 +35,11 @@ def test_01():
     assert find_links("https://www.youtube.com/watch?v=cdZZpaB2kDM") == [
         "https://www.youtube.com/watch?v=cdZZpaB2kDM"
     ]
+
+
+def test_04_captures_ending_slash():
+    assert find_links(
+        "https://strictdoc.readthedocs.io/_/downloads/en/latest/pdf/"
+    ) == [
+        "https://strictdoc.readthedocs.io/_/downloads/en/latest/pdf/"
+    ]
