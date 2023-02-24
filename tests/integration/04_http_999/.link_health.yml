@@ -1,0 +1,3 @@
+exceptions:
+  - url: https://www.linkedin.com/in/stanislavpankevich
+    code: HTTP_999
